@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registry — School Records System</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+:root{
+  --ink:#1B2430; --paper:#F6F3EC; --paper-raised:#FFFFFF;
+  --ledger:#2F6B4F; --ledger-dim:#e4ece7;
+  --brass:#B98A3D; --brass-dim:#f3e8d3;
+  --slate:#5B6472; --hairline:#d9d3c4;
+  --danger:#B14343; --danger-dim:#f6e4e2;
+  --radius:3px;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+h1,h2,h3,h4{font-family:'Source Serif 4',serif;margin:0;font-weight:600;}
+.mono{font-family:'JetBrains Mono',monospace;}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:var(--radius);}
+input,select,textarea{font-family:inherit;border-radius:var(--radius);}
+.hidden{display:none !important;}
+
+.center-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.card-box{background:var(--paper-raised);border:1px solid var(--hairline);border-radius:6px;padding:40px;width:100%;max-width:420px;box-shadow:0 2px 0 var(--hairline);}
+.card-box .eyebrow{letter-spacing:.12em;text-transform:uppercase;font-size:11px;color:var(--brass);font-weight:600;margin-bottom:6px;}
+.card-box h1{font-size:28px;margin-bottom:4px;}
+.card-box p.sub{color:var(--slate);font-size:13.5px;margin:0 0 24px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;color:var(--slate);margin-bottom:5px;font-weight:600;}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--hairline);font-size:14px;background:#fff;}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--ledger);outline-offset:1px;}
+.btn{padding:11px 18px;font-size:14px;font-weight:600;}
+.btn-primary{background:var(--ink);color:var(--paper);width:100%;}
+.btn-primary:hover{background:#2b3646;}
+.btn-secondary{background:transparent;border:1px solid var(--hairline) !important;color:var(--ink);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-ghost{background:transparent;color:var(--slate);}
+.err-msg{background:var(--danger-dim);color:var(--danger);padding:10px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:14px;}
+.ok-msg{background:var(--ledger-dim);color:var(--ledger);padding:10px 12px;border-radius:var(--radius);font-size:13px;margin-bottom:14px;}
+
+.app-shell{display:flex;min-height:100vh;}
+.sidebar{width:230px;background:var(--ink);color:var(--paper);padding:22px 16px;flex-shrink:0;display:flex;flex-direction:column;}
+.sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;padding:0 6px;}
+.sidebar .brand .mark{width:30px;height:30px;background:var(--brass);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',serif;font-weight:700;color:var(--ink);}
+.sidebar .brand .name{font-family:'Source Serif 4',serif;font-size:16px;font-weight:600;line-height:1.15;}
+.sidebar .brand .name small{display:block;font-family:'Inter';font-size:10.5px;color:#9aa5b3;font-weight:500;letter-spacing:.04em;text-transform:uppercase;}
+.navitem{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:var(--radius);font-size:13.5px;color:#c7cfda;margin-bottom:2px;}
+.navitem .idx{font-family:'JetBrains Mono';font-size:11px;color:#6f7c8e;width:18px;}
+.navitem:hover{background:#242e3d;color:#fff;cursor:pointer;}
+.navitem.active{background:var(--brass);color:var(--ink);font-weight:600;}
+.navitem.active .idx{color:var(--ink);opacity:.6;}
+.sidebar .spacer{flex:1;}
+.who{border-top:1px solid #2c3646;padding-top:14px;font-size:12.5px;}
+.who .n{font-weight:600;color:#fff;}
+.who .r{color:#9aa5b3;font-size:11px;text-transform:uppercase;letter-spacing:.06em;}
+.logout-btn{margin-top:10px;width:100%;background:#242e3d;color:#c7cfda;padding:8px;font-size:12.5px;}
+.logout-btn:hover{background:#2f3b4d;}
+
+.main{flex:1;padding:34px 40px;max-width:1180px;}
+.main-head{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.main-head .eyebrow{color:var(--brass);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;margin-bottom:4px;}
+.main-head h2{font-size:26px;}
+.main-head .count{color:var(--slate);font-size:13px;margin-top:3px;}
+
+table.register{width:100%;border-collapse:collapse;background:var(--paper-raised);border:1px solid var(--hairline);}
+table.register th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--slate);padding:10px 14px;border-bottom:1px solid var(--hairline);background:#fbfaf6;cursor:pointer;user-select:none;white-space:nowrap;}
+table.register th.sortable:hover{color:var(--ink);}
+table.register th .arrow{font-size:9px;margin-left:3px;color:var(--brass);}
+table.register td{padding:11px 14px;border-bottom:1px solid var(--hairline);font-size:13.5px;vertical-align:middle;}
+table.register tr:last-child td{border-bottom:none;}
+table.register tr:nth-child(even){background:#fbfaf6;}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.02em;}
+.tag.active{background:var(--ledger-dim);color:var(--ledger);}
+.tag.revoked{background:var(--danger-dim);color:var(--danger);}
+.row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+.row-actions button{padding:5px 9px;font-size:11.5px;background:#eee;color:var(--ink);}
+.row-actions button:hover{background:#ddd;}
+.row-actions button.danger{background:var(--danger-dim);color:var(--danger);}
+.row-actions button.danger:hover{background:#eccfcb;}
+
+.panel{background:var(--paper-raised);border:1px solid var(--hairline);border-radius:6px;padding:26px;margin-bottom:20px;}
+.panel h3{font-size:16px;margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px 16px;}
+.form-grid .full{grid-column:1/-1;}
+.form-actions{margin-top:18px;display:flex;gap:10px;}
+.toolbar{display:flex;justify-content:flex-end;margin-bottom:14px;gap:8px;flex-wrap:wrap;}
+
+.badge{display:flex;border:1px solid var(--hairline);border-radius:6px;overflow:hidden;background:#fff;max-width:420px;margin:14px 0;}
+.badge .stripe{width:8px;background:var(--brass);}
+.badge .body{padding:14px 18px;flex:1;}
+.badge .role{font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--slate);font-weight:700;}
+.badge .id{font-family:'JetBrains Mono';font-size:19px;font-weight:700;margin:2px 0 8px;color:var(--ink);}
+.badge .credrow{display:flex;gap:22px;font-size:13px;}
+.badge .credrow .lbl{color:var(--slate);font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;display:block;}
+.badge .credrow .val{font-family:'JetBrains Mono';font-weight:600;}
+
+.profile-card{display:flex;gap:20px;align-items:flex-start;}
+.profile-card .avatar{width:64px;height:64px;border-radius:50%;background:var(--ink);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4';font-size:24px;flex-shrink:0;}
+.profile-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin-top:6px;}
+.profile-fields .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--slate);}
+.profile-fields .val{font-size:14px;margin-top:2px;}
+
+.empty-state{text-align:center;padding:50px 20px;color:var(--slate);}
+.empty-state h4{color:var(--ink);margin-bottom:6px;}
+.child-card{border:1px solid var(--hairline);border-radius:5px;padding:14px 16px;margin-bottom:10px;background:#fff;}
+.notice{font-size:12px;color:var(--slate);border-top:1px dashed var(--hairline);padding-top:12px;margin-top:20px;}
+
+.search-row{display:flex;gap:10px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+.search-row input[type="search"]{padding:9px 12px;border:1px solid var(--hairline);width:280px;background:#fff;font-size:13.5px;}
+.search-row .hint{font-size:12px;color:var(--slate);}
+.bulkbar{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--brass-dim);border:1px solid var(--brass);border-radius:5px;margin-bottom:10px;font-size:13px;}
+.bulkbar button{background:#fff;padding:6px 11px;font-size:12px;border:1px solid var(--hairline);}
+.bulkbar button.danger{color:var(--danger);border-color:var(--danger);}
+.pagerow{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12.5px;color:var(--slate);}
+.pagerow button{background:#eee;padding:6px 11px;font-size:12px;}
+.pagerow button:disabled{opacity:.4;cursor:default;}
+.checkbox-cell{width:30px;text-align:center;}
+.spinner-note{font-size:12.5px;color:var(--slate);padding:16px 0;}
+
+@media(max-width:760px){
+  .app-shell{flex-direction:column;}
+  .sidebar{width:100%;flex-direction:row;overflow-x:auto;align-items:center;}
+  .sidebar .brand{margin-bottom:0;}
+  .who,.logout-btn{display:none;}
+  .main{padding:22px 18px;}
+  .form-grid{grid-template-columns:1fr;}
+  .search-row input[type="search"]{width:100%;}
+}
+:focus-visible{outline:2px solid var(--ledger);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =================================================================
+   STORAGE MODEL — built to hold many thousands of records per role.
+   Each role's users live in their own shard key so one busy list
+   (e.g. Students) never has to load or resave anyone else's data.
+   A separate username index gives O(1) login lookups without
+   scanning every shard, and a stats cache keeps the Overview page
+   instant without loading any shard at all.
+     settings          -> {schoolName, classes, departments, subjects, counters}
+     stats             -> {teacher:{total,active}, worker:{...}, ...}
+     username_index    -> {usernameLower: {role, uid}}
+     shard_<role>      -> {uid: userRecord, ...}
+================================================================= */
+
+const ROLES = ["teacher","worker","student","parent","admin"];
+let SETTINGS = null;
+let STATS = null;
+let USERNAME_INDEX = null;
+const SHARDS = {}; // lazy-loaded per role
+
+let session = null; // {uid, role}
+let ui = {
+  tab: "overview", showForm:false, editUid:null, banner:null, err:null, ok:null,
+  showBulk:false, bulkResult:null,
+  search:"", sortKey:"name", sortDir:1, page:1, pageSize:25, selected:new Set()
+};
+let searchDebounce = null;
+
+async function kget(key){
+  try{ const r = await window.storage.get(key, true); return r && r.value ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function kset(key, val){
+  try{ await window.storage.set(key, JSON.stringify(val), true); return true; }
+  catch(e){ console.error("storage write failed", key, e); return false; }
+}
+async function ensureShard(role){
+  if(!SHARDS[role]) SHARDS[role] = (await kget("shard_"+role)) || {};
+  return SHARDS[role];
+}
+async function saveShard(role){ await kset("shard_"+role, SHARDS[role]); }
+async function saveSettings(){ await kset("settings", SETTINGS); }
+async function saveUsernameIndex(){ await kset("username_index", USERNAME_INDEX); }
+function recomputeStat(role){
+  const vals = Object.values(SHARDS[role] || {});
+  STATS[role] = { total: vals.length, active: vals.filter(u=>u.status==="active").length };
+}
+async function saveStats(){ await kset("stats", STATS); }
+
+/* ---------------- id / credential generation ---------------- */
+function pad(n){ return String(n).padStart(4,"0"); }
+function prefixFor(role){ return {admin:"ADM",teacher:"TCH",worker:"WRK",student:"STU",parent:"PAR"}[role]; }
+function genPassword(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+  let p=""; for(let i=0;i<8;i++) p+=chars[Math.floor(Math.random()*chars.length)];
+  return p;
+}
+function slug(name){ return (name||"user").toLowerCase().replace(/[^a-z]/g,"").slice(0,10) || "user"; }
+function uniqueUsername(base){
+  let candidate = base, n=1;
+  while(USERNAME_INDEX[candidate]) { candidate = base + n; n++; }
+  return candidate;
+}
+function makeUser(role, fields){
+  SETTINGS.counters[role]++;
+  const num = SETTINGS.counters[role];
+  const id = prefixFor(role) + "-" + pad(num);
+  const username = uniqueUsername(slug(fields.name));
+  const password = genPassword();
+  const uid = id + "-" + Date.now().toString(36) + Math.floor(Math.random()*999);
+  const user = Object.assign({
+    uid, role, id, username, password, status:"active", createdAt:new Date().toISOString()
+  }, fields, {username, password});
+  USERNAME_INDEX[username] = {role, uid};
+  return user;
+}
+
+/* ---------------- small helpers ---------------- */
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function initials(name){ return (name||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join(""); }
+function labelFor(role){ return {teacher:"Teachers",worker:"Workers",student:"Students",parent:"Parents",admin:"Administrators"}[role]; }
+function roleNoun(role){ return {teacher:"teacher",worker:"worker",student:"student",parent:"parent",admin:"administrator"}[role]; }
+function downloadCSV(filename, rows){
+  const csv = rows.map(r => r.map(v=>{
+    const s = String(v==null?"":v);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(",")).join("\n");
+  try{
+    const blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(url);
+  }catch(e){ console.error("download failed", e); }
+  return csv;
+}
+
+/* ---------------- render dispatch ---------------- */
+function render(){
+  const root = document.getElementById("root");
+  if(!SETTINGS){ root.innerHTML = setupScreen(); attachSetupHandlers(); return; }
+  if(!session){ root.innerHTML = loginScreen(); attachLoginHandlers(); return; }
+  root.innerHTML = appShell();
+  attachAppHandlers();
+}
+
+/* ================= SETUP ================= */
+function setupScreen(){
+  return `
+  <div class="center-screen">
+    <div class="card-box">
+      <div class="eyebrow">First-time setup</div>
+      <h1>Start your registry</h1>
+      <p class="sub">This creates the school's record book and its first administrator account.</p>
+      ${ui.err ? `<div class="err-msg">${esc(ui.err)}</div>` : ""}
+      <form id="setup-form">
+        <div class="field"><label>School name</label><input name="schoolName" required placeholder="e.g. Riverbend High School"></div>
+        <div class="field"><label>Your name (first administrator)</label><input name="adminName" required placeholder="Full name"></div>
+        <div class="field"><label>Choose a login username</label><input name="username" required placeholder="e.g. headadmin"></div>
+        <div class="field"><label>Choose a password</label><input name="password" type="password" required minlength="4"></div>
+        <button class="btn btn-primary" type="submit">Create registry &amp; sign in</button>
+      </form>
+      <p class="notice">Data lives in this artifact's shared storage — anyone who opens this app can read and write it. Built for scale (thousands of records per role, indexed logins), but still a working prototype, not an encrypted production database.</p>
+    </div>
+  </div>`;
+}
+function attachSetupHandlers(){
+  document.getElementById("setup-form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    SETTINGS = {
+      schoolName: fd.get("schoolName").trim(),
+      classes: ["Grade 1","Grade 2","Grade 3","Grade 4","Grade 5"],
+      departments: ["Facilities","Administration","Accounts","Security"],
+      subjects: ["Mathematics","English","Science","Social Studies","Arts"],
+      counters: {admin:0,teacher:0,worker:0,student:0,parent:0}
+    };
+    STATS = {}; USERNAME_INDEX = {};
+    ROLES.forEach(r=>SHARDS[r]={});
+    const admin = makeUser("admin", {name: fd.get("adminName").trim(), username: fd.get("username").trim().toLowerCase(), email:"", phone:""});
+    admin.password = fd.get("password"); // honor the chosen password
+    USERNAME_INDEX[admin.username] = {role:"admin", uid:admin.uid};
+    SHARDS.admin[admin.uid] = admin;
+    recomputeStat("admin"); ROLES.filter(r=>r!=="admin").forEach(recomputeStat);
+    await Promise.all([saveSettings(), saveStats(), saveUsernameIndex(), saveShard("admin")]);
+    session = {uid: admin.uid, role:"admin"};
+    ui.err = null; ui.tab = "overview";
+    render();
+  });
+}
+
+/* ================= LOGIN ================= */
+function loginScreen(){
+  return `
+  <div class="center-screen">
+    <div class="card-box">
+      <div class="eyebrow">${esc(SETTINGS.schoolName)}</div>
+      <h1>Sign in</h1>
+      <p class="sub">Use the username and password issued to you by your administrator.</p>
+      ${ui.err ? `<div class="err-msg">${esc(ui.err)}</div>` : ""}
+      <form id="login-form">
+        <div class="field"><label>Username</label><input name="username" required autocomplete="username"></div>
+        <div class="field"><label>Password</label><input name="password" type="password" required autocomplete="current-password"></div>
+        <button class="btn btn-primary" type="submit">Sign in</button>
+      </form>
+    </div>
+  </div>`;
+}
+function attachLoginHandlers(){
+  document.getElementById("login-form").addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const username = fd.get("username").trim().toLowerCase();
+    const password = fd.get("password");
+    const entry = USERNAME_INDEX[username];
+    if(!entry){ ui.err = "Incorrect username or password."; render(); return; }
+    await ensureShard(entry.role);
+    const user = SHARDS[entry.role][entry.uid];
+    if(!user || user.password !== password){ ui.err = "Incorrect username or password."; render(); return; }
+    if(user.status !== "active"){ ui.err = "This login's access has been withdrawn. Contact your administrator."; render(); return; }
+    session = {uid:user.uid, role:user.role};
+    ui.err = null; ui.tab = user.role === "admin" ? "overview" : "profile";
+    render();
+  });
+}
+
+/* ================= APP SHELL ================= */
+function navItemsFor(role){
+  if(role === "admin") return [
+    {key:"overview", label:"Overview", idx:"00"},
+    {key:"teacher", label:"Teachers", idx:"01"},
+    {key:"worker", label:"Workers", idx:"02"},
+    {key:"student", label:"Students", idx:"03"},
+    {key:"parent", label:"Parents", idx:"04"},
+    {key:"admin", label:"Administration", idx:"05"},
+    {key:"settings", label:"Settings", idx:"06"},
+    {key:"account", label:"My Account", idx:"07"},
+  ];
+  return [{key:"profile", label:"My Profile", idx:"01"}, {key:"account", label:"Account", idx:"02"}];
+}
+function appShell(){
+  const me = SHARDS[session.role][session.uid];
+  const items = navItemsFor(session.role);
+  return `
+  <div class="app-shell">
+    <div class="sidebar">
+      <div class="brand"><div class="mark">R</div><div class="name">${esc(SETTINGS.schoolName)}<small>Registry</small></div></div>
+      ${items.map(it=>`<div class="navitem ${ui.tab===it.key?'active':''}" data-nav="${it.key}"><span class="idx mono">${it.idx}</span>${it.label}</div>`).join("")}
+      <div class="spacer"></div>
+      <div class="who"><div class="n">${esc(me.name)}</div><div class="r">${esc(me.role)} · ${esc(me.id)}</div></div>
+      <button class="logout-btn" id="logout-btn">Sign out</button>
+    </div>
+    <div class="main" id="main-area"><div class="spinner-note">Loading…</div></div>
+  </div>`;
+}
+
+/* renders main content async because a shard may need loading */
+async function renderMain(){
+  const area = document.getElementById("main-area");
+  if(!area) return;
+  const me = SHARDS[session.role][session.uid];
+  let html = "";
+  if(session.role === "admin"){
+    if(ui.tab === "overview") html = overviewView();
+    else if(ROLES.includes(ui.tab)){
+      await ensureShard(ui.tab);
+      if(ui.tab === "student") await ensureShard("parent");
+      if(ui.tab === "parent") await ensureShard("student");
+      html = roleRegisterView(ui.tab);
+    }
+    else if(ui.tab === "settings") html = settingsView();
+    else if(ui.tab === "account") html = accountView(me);
+  } else {
+    if(ui.tab === "profile"){
+      if(me.role === "teacher") { /* classes already on record */ }
+      if(me.role === "student" && me.parentUid) await ensureShard("parent");
+      if(me.role === "parent") await ensureShard("student");
+      html = profileView(me);
+    } else if(ui.tab === "account") html = accountView(me);
+  }
+  area.innerHTML = html;
+  attachMainHandlers();
+}
+
+/* ================= OVERVIEW (stats cache only — no shard loads) ================= */
+function overviewView(){
+  const rows = ROLES.map(r => ({role:r, total: (STATS[r]&&STATS[r].total)||0, active:(STATS[r]&&STATS[r].active)||0}));
+  return `
+  <div class="main-head"><div><div class="eyebrow">Registry overview</div><h2>${esc(SETTINGS.schoolName)}</h2></div></div>
+  <div class="form-grid" style="grid-template-columns:repeat(5,1fr);margin-bottom:26px;">
+    ${rows.map(c=>`
+      <div class="panel" style="padding:18px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--slate);font-weight:700;">${labelFor(c.role)}</div>
+        <div style="font-family:'Source Serif 4';font-size:30px;margin-top:6px;">${c.active}</div>
+        <div style="font-size:12px;color:var(--slate);">${c.total - c.active} inactive of ${c.total}</div>
+      </div>`).join("")}
+  </div>
+  <div class="panel">
+    <h3>How this works</h3>
+    <p style="font-size:13.5px;color:var(--slate);line-height:1.6;">Each list has its own search, sortable columns, and bulk actions so it stays fast even with thousands of records. Add a person under Teachers, Workers, Students, or Parents to issue their ID and login instantly, or use "Bulk add" to onboard many at once from pasted rows. Revoking or deleting blocks a login immediately — nothing else to do.</p>
+  </div>`;
+}
+
+/* ================= REGISTER (search + sort + paginate + bulk) ================= */
+function filteredSorted(role){
+  let list = Object.values(SHARDS[role] || {});
+  const q = ui.search.trim().toLowerCase();
+  if(q) list = list.filter(u => [u.name,u.id,u.username].some(v=>String(v||"").toLowerCase().includes(q)));
+  const key = ui.sortKey, dir = ui.sortDir;
+  list = list.slice().sort((a,b)=>{
+    let av = a[key], bv = b[key];
+    av = (av==null? "" : av); bv = (bv==null? "" : bv);
+    if(typeof av === "string") av = av.toLowerCase();
+    if(typeof bv === "string") bv = bv.toLowerCase();
+    if(av < bv) return -1*dir; if(av > bv) return 1*dir; return 0;
+  });
+  return list;
+}
+function colsFor(role){
+  if(role==="teacher") return [{key:"subject",label:"Subject"},{key:"classes",label:"Classes"},{key:"phone",label:"Phone"}];
+  if(role==="worker") return [{key:"position",label:"Position"},{key:"department",label:"Department"},{key:"phone",label:"Phone"}];
+  if(role==="student") return [{key:"className",label:"Class"},{key:"rollNo",label:"Roll No."},{key:"parentUid",label:"Parent", get:u=>{ const p=(SHARDS.parent||{})[u.parentUid]; return p ? p.name : "Unlinked"; }}];
+  if(role==="parent") return [{key:"phone",label:"Phone"},{key:"_children",label:"Children", get:u=>{ const kids=Object.values(SHARDS.student||{}).filter(s=>s.parentUid===u.uid); return kids.length? kids.map(k=>k.name).join(", ") : "None linked"; }}];
+  return [{key:"email",label:"Email"},{key:"phone",label:"Phone"}];
+}
+function bulkTemplateHint(role){
+  return {
+    teacher:"name,phone,subject,classes,email  —  one teacher per line. classes can be \"Grade 3; Grade 4\"",
+    worker:"name,phone,position,department,email  —  one worker per line",
+    student:"name,rollNo,className,dob,address  —  one student per line (link parents afterward by editing)",
+    parent:"name,phone,email,address  —  one parent per line",
+    admin:"name,phone,email  —  one administrator per line"
+  }[role];
+}
+function roleRegisterView(role){
+  const cols = colsFor(role);
+  const stat = STATS[role] || {total:0, active:0};
+  return `
+  <div class="main-head">
+    <div><div class="eyebrow">Register</div><h2>${labelFor(role)}</h2><div class="count">${stat.total} on record · ${stat.active} active</div></div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-secondary" data-action="export-csv">Export CSV</button>
+    <button class="btn btn-secondary" data-action="toggle-bulk">${ui.showBulk?"Cancel bulk add":"Bulk add (CSV)"}</button>
+    <button class="btn btn-secondary" data-action="toggle-form">${ui.showForm ? "Cancel" : "+ Add " + roleNoun(role)}</button>
+  </div>
+  ${ui.showForm ? formPanel(role) : ""}
+  ${ui.showBulk ? bulkAddPanel(role) : ""}
+  ${ui.bulkResult ? bulkResultPanel() : ""}
+  ${ui.banner ? bannerPanel(ui.banner) : ""}
+  <div class="search-row">
+    <input type="search" id="search-input" placeholder="Search by name, ID, or username…" value="${esc(ui.search)}">
+    <span class="hint">${cols.map(c=>c.label).join(" · ")}</span>
+  </div>
+  <div id="register-body">${registerBodyHTML(role)}</div>
+  `;
+}
+function registerBodyHTML(role){
+  const cols = colsFor(role);
+  const all = filteredSorted(role);
+  const totalPages = Math.max(1, Math.ceil(all.length / ui.pageSize));
+  if(ui.page > totalPages) ui.page = totalPages;
+  const start = (ui.page-1)*ui.pageSize;
+  const pageItems = all.slice(start, start+ui.pageSize);
+  const selCount = ui.selected.size;
+
+  if(all.length === 0){
+    return `<div class="panel empty-state"><h4>No ${labelFor(role).toLowerCase()} match${ui.search? " your search":""}</h4><p>${ui.search? "Try a different search term." : "Add the first one to issue their login."}</p></div>`;
+  }
+
+  const arrow = (k)=> ui.sortKey===k ? `<span class="arrow">${ui.sortDir===1?"▲":"▼"}</span>` : "";
+
+  return `
+    ${selCount>0 ? `<div class="bulkbar">
+      <strong>${selCount} selected</strong>
+      <button data-action="bulk-revoke">Revoke</button>
+      <button data-action="bulk-restore">Restore</button>
+      <button class="danger" data-action="bulk-delete">Delete</button>
+      <button data-action="bulk-clear">Clear selection</button>
+    </div>` : ""}
+    <table class="register">
+      <thead><tr>
+        <th class="checkbox-cell"><input type="checkbox" id="select-all-page" ${pageItems.every(u=>ui.selected.has(u.uid)) && pageItems.length? "checked":""}></th>
+        <th class="sortable" data-sort="name">Name ${arrow("name")}</th>
+        <th class="sortable" data-sort="id">ID ${arrow("id")}</th>
+        <th class="sortable" data-sort="username">Username ${arrow("username")}</th>
+        ${cols.map(c=>`<th class="sortable" data-sort="${c.key}">${c.label} ${arrow(c.key)}</th>`).join("")}
+        <th class="sortable" data-sort="status">Status ${arrow("status")}</th>
+        <th>Actions</th>
+      </tr></thead>
+      <tbody>
+        ${pageItems.map(u=>`
+          <tr>
+            <td class="checkbox-cell"><input type="checkbox" class="row-check" data-uid="${u.uid}" ${ui.selected.has(u.uid)?"checked":""}></td>
+            <td><strong>${esc(u.name)}</strong></td>
+            <td class="mono">${esc(u.id)}</td>
+            <td class="mono">${esc(u.username)}</td>
+            ${cols.map(c=>`<td>${esc(c.get ? c.get(u) : (u[c.key]||"—"))}</td>`).join("")}
+            <td><span class="tag ${u.status}">${u.status==='active'?'Active':'Revoked'}</span></td>
+            <td><div class="row-actions">
+              <button data-action="edit" data-uid="${u.uid}">Edit</button>
+              <button data-action="reset-pw" data-uid="${u.uid}">Reset PW</button>
+              <button data-action="toggle-status" data-uid="${u.uid}">${u.status==='active'?'Revoke':'Restore'}</button>
+              <button class="danger" data-action="delete" data-uid="${u.uid}">Delete</button>
+            </div></td>
+          </tr>`).join("")}
+      </tbody>
+    </table>
+    <div class="pagerow">
+      <span>Showing ${all.length===0?0:start+1}–${Math.min(start+ui.pageSize, all.length)} of ${all.length}</span>
+      <span>
+        <button data-action="page-prev" ${ui.page<=1?"disabled":""}>← Prev</button>
+        Page ${ui.page} of ${totalPages}
+        <button data-action="page-next" ${ui.page>=totalPages?"disabled":""}>Next →</button>
+      </span>
+    </div>`;
+}
+function bannerPanel(b){
+  return `<div class="panel" style="border-color:var(--brass);">
+    <h3>Login issued for ${esc(b.name)}</h3>
+    <div class="badge"><div class="stripe"></div><div class="body">
+      <div class="role">${esc(b.role)}</div><div class="id mono">${esc(b.id)}</div>
+      <div class="credrow"><div><span class="lbl">Username</span><span class="val">${esc(b.username)}</span></div>
+      <div><span class="lbl">Password</span><span class="val">${esc(b.password)}</span></div></div>
+    </div></div>
+    <p class="notice">Share these credentials with ${esc(b.name)} directly — this password won't be shown again.</p>
+    <button class="btn btn-ghost" data-action="dismiss-banner" style="padding:0;text-decoration:underline;">Dismiss</button>
+  </div>`;
+}
+function bulkAddPanel(role){
+  return `
+  <div class="panel">
+    <h3>Bulk add ${labelFor(role).toLowerCase()}</h3>
+    <p style="font-size:12.5px;color:var(--slate);margin-top:-8px;">One row per line, comma-separated: <span class="mono">${esc(bulkTemplateHint(role))}</span></p>
+    <form id="bulk-form">
+      <div class="field"><textarea name="rows" rows="6" placeholder="Jane Doe,555-0100,Mathematics,Grade 4,jane@example.com"></textarea></div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" style="width:auto;">Create accounts</button>
+        <button class="btn btn-ghost" type="button" data-action="toggle-bulk">Cancel</button>
+      </div>
+    </form>
+  </div>`;
+}
+function bulkResultPanel(){
+  const rows = ui.bulkResult;
+  return `
+  <div class="panel">
+    <h3>${rows.length} account${rows.length===1?"":"s"} created</h3>
+    <table class="register" style="margin-bottom:12px;">
+      <thead><tr><th>Name</th><th>ID</th><th>Username</th><th>Password</th></tr></thead>
+      <tbody>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td class="mono">${esc(r.id)}</td><td class="mono">${esc(r.username)}</td><td class="mono">${esc(r.password)}</td></tr>`).join("")}</tbody>
+    </table>
+    <div class="form-actions">
+      <button class="btn btn-secondary" data-action="download-bulk" style="width:auto;">Download credentials CSV</button>
+      <button class="btn btn-ghost" data-action="dismiss-bulk-result">Dismiss</button>
+    </div>
+    <p class="notice">Distribute these to each person now — passwords aren't stored anywhere you can view again after this.</p>
+  </div>`;
+}
+
+/* ================= FORM PANEL (single add/edit) ================= */
+function formPanel(role){
+  const editing = ui.editUid ? SHARDS[role][ui.editUid] : null;
+  const title = editing ? `Edit ${roleNoun(role)}` : `Add ${roleNoun(role)}`;
+  const v = (k, d="") => editing ? esc(editing[k]||"") : d;
+  let fields = "";
+  if(role==="teacher"){
+    fields = `
+      <div class="field"><label>Full name</label><input name="name" required value="${v('name')}"></div>
+      <div class="field"><label>Phone</label><input name="phone" value="${v('phone')}"></div>
+      <div class="field"><label>Subject</label><select name="subject">${SETTINGS.subjects.map(s=>`<option ${editing&&editing.subject===s?'selected':''}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field"><label>Classes (comma-separated)</label><input name="classes" placeholder="e.g. Grade 3, Grade 4" value="${v('classes')}"></div>
+      <div class="field full"><label>Email</label><input name="email" type="email" value="${v('email')}"></div>`;
+  } else if(role==="worker"){
+    fields = `
+      <div class="field"><label>Full name</label><input name="name" required value="${v('name')}"></div>
+      <div class="field"><label>Phone</label><input name="phone" value="${v('phone')}"></div>
+      <div class="field"><label>Position</label><input name="position" placeholder="e.g. Janitor, Accountant" value="${v('position')}"></div>
+      <div class="field"><label>Department</label><select name="department">${SETTINGS.departments.map(s=>`<option ${editing&&editing.department===s?'selected':''}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field full"><label>Email</label><input name="email" type="email" value="${v('email')}"></div>`;
+  } else if(role==="student"){
+    const parents = Object.values(SHARDS.parent||{});
+    fields = `
+      <div class="field"><label>Full name</label><input name="name" required value="${v('name')}"></div>
+      <div class="field"><label>Roll number</label><input name="rollNo" value="${v('rollNo')}"></div>
+      <div class="field"><label>Class</label><select name="className">${SETTINGS.classes.map(s=>`<option ${editing&&editing.className===s?'selected':''}>${esc(s)}</option>`).join("")}</select></div>
+      <div class="field"><label>Date of birth</label><input name="dob" type="date" value="${v('dob')}"></div>
+      <div class="field full"><label>Address</label><input name="address" value="${v('address')}"></div>
+      <div class="field full"><label>Parent / guardian</label>
+        <select name="parentUid" id="parent-select">
+          <option value="">— No parent linked yet —</option>
+          ${parents.map(p=>`<option value="${p.uid}" ${editing&&editing.parentUid===p.uid?'selected':''}>${esc(p.name)} (${esc(p.id)})</option>`).join("")}
+          <option value="__new__">+ Add a new parent…</option>
+        </select>
+      </div>
+      <div id="new-parent-fields" class="full form-grid hidden" style="border-top:1px dashed var(--hairline);padding-top:14px;margin-top:4px;">
+        <div class="field"><label>New parent name</label><input name="newParentName"></div>
+        <div class="field"><label>New parent phone</label><input name="newParentPhone"></div>
+        <div class="field full"><label>New parent email</label><input name="newParentEmail" type="email"></div>
+      </div>`;
+  } else if(role==="parent"){
+    fields = `
+      <div class="field"><label>Full name</label><input name="name" required value="${v('name')}"></div>
+      <div class="field"><label>Phone</label><input name="phone" value="${v('phone')}"></div>
+      <div class="field full"><label>Email</label><input name="email" type="email" value="${v('email')}"></div>
+      <div class="field full"><label>Address</label><input name="address" value="${v('address')}"></div>`;
+  } else if(role==="admin"){
+    fields = `
+      <div class="field"><label>Full name</label><input name="name" required value="${v('name')}"></div>
+      <div class="field"><label>Phone</label><input name="phone" value="${v('phone')}"></div>
+      <div class="field full"><label>Email</label><input name="email" type="email" value="${v('email')}"></div>`;
+  }
+  return `
+  <div class="panel">
+    <h3>${title}</h3>
+    <form id="entity-form">
+      <div class="form-grid">${fields}</div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" style="width:auto;">${editing? "Save changes" : "Add & issue login"}</button>
+        <button class="btn btn-ghost" type="button" data-action="toggle-form">Cancel</button>
+      </div>
+    </form>
+  </div>`;
+}
+
+/* ================= PROFILE (non-admin) ================= */
+function profileView(me){
+  let extra = "";
+  if(me.role === "teacher"){
+    const myClasses = (me.classes||"").split(",").map(s=>s.trim()).filter(Boolean);
+    const roster = Object.values(SHARDS.student||{}).filter(u=>myClasses.includes(u.className));
+    extra = `<div class="panel"><h3>Class roster</h3>${roster.length===0? `<p style="color:var(--slate);font-size:13.5px;">No students found in your assigned classes yet.</p>` :
+      `<table class="register"><thead><tr><th>Name</th><th>Class</th><th>Roll No.</th></tr></thead><tbody>${roster.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.className)}</td><td>${esc(s.rollNo||'—')}</td></tr>`).join("")}</tbody></table>`}</div>`;
+  }
+  if(me.role === "student"){
+    const parent = me.parentUid ? (SHARDS.parent||{})[me.parentUid] : null;
+    extra = `<div class="panel"><h3>Parent / guardian contact</h3>${parent? `<div class="profile-fields"><div><div class="lbl">Name</div><div class="val">${esc(parent.name)}</div></div><div><div class="lbl">Phone</div><div class="val">${esc(parent.phone||'—')}</div></div></div>` : `<p style="color:var(--slate);font-size:13.5px;">No parent linked on file. Contact administration if this is incorrect.</p>`}</div>`;
+  }
+  if(me.role === "parent"){
+    const kids = Object.values(SHARDS.student||{}).filter(u=>u.parentUid===me.uid);
+    extra = `<div class="panel"><h3>Linked children</h3>${kids.length===0? `<p style="color:var(--slate);font-size:13.5px;">No students linked to your account yet. Contact administration.</p>` : kids.map(k=>`<div class="child-card"><strong>${esc(k.name)}</strong> — ${esc(k.className||'Unassigned class')} · Roll ${esc(k.rollNo||'—')}</div>`).join("")}</div>`;
+  }
+  return `
+  <div class="main-head"><div><div class="eyebrow">${esc(me.role)}</div><h2>My Profile</h2></div></div>
+  <div class="panel"><div class="profile-card">
+    <div class="avatar">${esc(initials(me.name))}</div>
+    <div><h3 style="font-size:19px;">${esc(me.name)}</h3>
+      <div class="profile-fields">
+        <div><div class="lbl">ID</div><div class="val mono">${esc(me.id)}</div></div>
+        <div><div class="lbl">Status</div><div class="val"><span class="tag ${me.status}">${me.status==='active'?'Active':'Revoked'}</span></div></div>
+        ${me.subject? `<div><div class="lbl">Subject</div><div class="val">${esc(me.subject)}</div></div>`:""}
+        ${me.classes? `<div><div class="lbl">Classes</div><div class="val">${esc(me.classes)}</div></div>`:""}
+        ${me.position? `<div><div class="lbl">Position</div><div class="val">${esc(me.position)}</div></div>`:""}
+        ${me.department? `<div><div class="lbl">Department</div><div class="val">${esc(me.department)}</div></div>`:""}
+        ${me.className? `<div><div class="lbl">Class</div><div class="val">${esc(me.className)}</div></div>`:""}
+        ${me.rollNo? `<div><div class="lbl">Roll No.</div><div class="val">${esc(me.rollNo)}</div></div>`:""}
+        ${me.phone? `<div><div class="lbl">Phone</div><div class="val">${esc(me.phone)}</div></div>`:""}
+        ${me.email? `<div><div class="lbl">Email</div><div class="val">${esc(me.email)}</div></div>`:""}
+      </div>
+    </div>
+  </div></div>
+  ${extra}`;
+}
+
+/* ================= SETTINGS ================= */
+function settingsView(){
+  return `
+  <div class="main-head"><div><div class="eyebrow">Configure</div><h2>Settings</h2></div></div>
+  <div class="panel"><h3>School name</h3>
+    <form id="school-name-form" class="form-grid">
+      <div class="field full"><input name="schoolName" value="${esc(SETTINGS.schoolName)}"></div>
+      <div class="full"><button class="btn btn-secondary" type="submit" style="width:auto;">Save name</button></div>
+    </form>
+  </div>
+  ${listEditorPanel("classes","Classes")}
+  ${listEditorPanel("departments","Departments")}
+  ${listEditorPanel("subjects","Subjects")}
+  <div class="panel"><h3>About security &amp; scale</h3>
+    <p style="font-size:13px;color:var(--slate);line-height:1.6;">Every person gets a unique ID and login the moment they're added, and revoking or deleting them blocks that login immediately. Records are split into a separate store per role and indexed by username, so lists stay fast — search, sorting, and pagination only ever touch the role you're viewing, and each role can hold many thousands of records. That said, this still runs on shared, unencrypted browser-artifact storage, so treat it as a working prototype rather than a system of record for sensitive data.</p>
+  </div>`;
+}
+function listEditorPanel(key, label){
+  const items = SETTINGS[key];
+  return `<div class="panel"><h3>${label}</h3>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+      ${items.map((it,i)=>`<span class="tag active" style="display:flex;align-items:center;gap:6px;">${esc(it)}<button data-action="remove-list-item" data-key="${key}" data-idx="${i}" style="background:none;padding:0;color:var(--ledger);font-weight:700;">×</button></span>`).join("") || `<span style="color:var(--slate);font-size:13px;">None yet.</span>`}
+    </div>
+    <form data-key="${key}" class="list-add-form" style="display:flex;gap:8px;">
+      <input name="item" placeholder="Add new ${label.toLowerCase().slice(0,-1)}" style="flex:1;padding:8px 10px;border:1px solid var(--hairline);">
+      <button class="btn btn-secondary" type="submit" style="width:auto;">Add</button>
+    </form>
+  </div>`;
+}
+
+/* ================= ACCOUNT ================= */
+function accountView(me){
+  return `
+  <div class="main-head"><div><div class="eyebrow">Account</div><h2>Change password</h2></div></div>
+  <div class="panel" style="max-width:420px;">
+    ${ui.err ? `<div class="err-msg">${esc(ui.err)}</div>`:""}
+    ${ui.ok ? `<div class="ok-msg">${esc(ui.ok)}</div>`:""}
+    <form id="pw-form">
+      <div class="field"><label>Current password</label><input type="password" name="current" required></div>
+      <div class="field"><label>New password</label><input type="password" name="next" required minlength="4"></div>
+      <button class="btn btn-primary" type="submit" style="width:auto;">Update password</button>
+    </form>
+  </div>`;
+}
+
+/* ================= EVENT HANDLING ================= */
+function attachAppHandlers(){
+  document.querySelectorAll("[data-nav]").forEach(el=>{
+    el.addEventListener("click", async ()=>{
+      ui.tab = el.dataset.nav;
+      ui.showForm=false; ui.editUid=null; ui.banner=null; ui.err=null; ui.ok=null;
+      ui.showBulk=false; ui.bulkResult=null; ui.search=""; ui.sortKey="name"; ui.sortDir=1; ui.page=1; ui.selected=new Set();
+      await renderMain();
+    });
+  });
+  const logoutBtn = document.getElementById("logout-btn");
+  if(logoutBtn) logoutBtn.addEventListener("click", ()=>{
+    session=null;
+    ui = {tab:"overview", showForm:false, editUid:null, banner:null, err:null, ok:null, showBulk:false, bulkResult:null, search:"", sortKey:"name", sortDir:1, page:1, pageSize:25, selected:new Set()};
+    render();
+  });
+  renderMain();
+}
+
+/* Handlers scoped to whatever is currently in #main-area — reattached
+   every time renderMain() runs, but the search box's own focus is only
+   ever lost when the WHOLE tab changes, never while typing, because
+   typing only replaces #register-body. */
+function attachMainHandlers(){
+  const area = document.getElementById("main-area");
+  if(!area) return;
+  const me = SHARDS[session.role][session.uid];
+  const role = ui.tab;
+
+  const searchInput = area.querySelector("#search-input");
+  if(searchInput){
+    searchInput.addEventListener("input", ()=>{
+      ui.search = searchInput.value; ui.page = 1;
+      clearTimeout(searchDebounce);
+      searchDebounce = setTimeout(()=>{ refreshBody(role); }, 120);
+    });
+  }
+
+  area.addEventListener("click", async (e)=>{
+    const t = e.target;
+    const actEl = t.closest("[data-action]");
+    if(!actEl) return;
+    const action = actEl.dataset.action;
+
+    if(action === "toggle-form"){ ui.showForm=!ui.showForm; ui.editUid=null; ui.banner=null; await renderMain(); return; }
+    if(action === "toggle-bulk"){ ui.showBulk=!ui.showBulk; ui.bulkResult=null; await renderMain(); return; }
+    if(action === "dismiss-banner"){ ui.banner=null; await renderMain(); return; }
+    if(action === "dismiss-bulk-result"){ ui.bulkResult=null; await renderMain(); return; }
+    if(action === "download-bulk" && ui.bulkResult){
+      downloadCSV(role+"_new_credentials.csv", [["name","id","username","password"], ...ui.bulkResult.map(r=>[r.name,r.id,r.username,r.password])]);
+      return;
+    }
+    if(action === "export-csv"){
+      const cols = colsFor(role);
+      const list = Object.values(SHARDS[role]||{});
+      const header = ["name","id","username","status", ...cols.map(c=>c.label)];
+      const dataRows = list.map(u=>[u.name,u.id,u.username,u.status, ...cols.map(c=>c.get? c.get(u) : (u[c.key]||""))]);
+      downloadCSV(role+"_register.csv", [header, ...dataRows]);
+      return;
+    }
+    if(action === "edit"){ ui.editUid = actEl.dataset.uid; ui.showForm=true; ui.banner=null; await renderMain(); return; }
+    if(action === "toggle-status"){
+      const u = SHARDS[role][actEl.dataset.uid];
+      u.status = u.status==="active" ? "revoked" : "active";
+      recomputeStat(role); await Promise.all([saveShard(role), saveStats()]);
+      refreshBody(role); return;
+    }
+    if(action === "delete"){
+      const u = SHARDS[role][actEl.dataset.uid];
+      if(!confirm(`Permanently delete ${u.name} (${u.id})? This cannot be undone and their login will stop working immediately.`)) return;
+      delete USERNAME_INDEX[u.username];
+      delete SHARDS[role][u.uid];
+      ui.selected.delete(u.uid);
+      recomputeStat(role); await Promise.all([saveShard(role), saveStats(), saveUsernameIndex()]);
+      refreshBody(role); return;
+    }
+    if(action === "reset-pw"){
+      const u = SHARDS[role][actEl.dataset.uid];
+      u.password = genPassword();
+      await saveShard(role);
+      ui.banner = {name:u.name, role:u.role, id:u.id, username:u.username, password:u.password};
+      await renderMain(); return;
+    }
+    if(action === "bulk-revoke" || action === "bulk-restore"){
+      const newStatus = action === "bulk-revoke" ? "revoked" : "active";
+      ui.selected.forEach(uid=>{ if(SHARDS[role][uid]) SHARDS[role][uid].status = newStatus; });
+      recomputeStat(role); await Promise.all([saveShard(role), saveStats()]);
+      refreshBody(role); return;
+    }
+    if(action === "bulk-delete"){
+      if(!confirm(`Permanently delete ${ui.selected.size} record(s)? This cannot be undone.`)) return;
+      ui.selected.forEach(uid=>{ const u=SHARDS[role][uid]; if(u){ delete USERNAME_INDEX[u.username]; delete SHARDS[role][uid]; } });
+      ui.selected.clear();
+      recomputeStat(role); await Promise.all([saveShard(role), saveStats(), saveUsernameIndex()]);
+      refreshBody(role); return;
+    }
+    if(action === "bulk-clear"){ ui.selected.clear(); refreshBody(role); return; }
+    if(action === "page-prev"){ ui.page = Math.max(1, ui.page-1); refreshBody(role); return; }
+    if(action === "page-next"){ ui.page = ui.page+1; refreshBody(role); return; }
+
+    const th = t.closest("[data-sort]");
+    if(th){
+      const key = th.dataset.sort;
+      if(ui.sortKey === key) ui.sortDir *= -1; else { ui.sortKey = key; ui.sortDir = 1; }
+      refreshBody(role); return;
+    }
+  });
+
+  area.addEventListener("change", async (e)=>{
+    if(e.target.id === "select-all-page"){
+      const boxes = area.querySelectorAll(".row-check");
+      if(e.target.checked) boxes.forEach(b=>ui.selected.add(b.dataset.uid));
+      else boxes.forEach(b=>ui.selected.delete(b.dataset.uid));
+      refreshBody(role); return;
+    }
+    if(e.target.classList.contains("row-check")){
+      if(e.target.checked) ui.selected.add(e.target.dataset.uid); else ui.selected.delete(e.target.dataset.uid);
+      refreshBody(role); return;
+    }
+    if(e.target.id === "parent-select"){
+      const box = document.getElementById("new-parent-fields");
+      if(box) box.classList.toggle("hidden", e.target.value !== "__new__");
+      return;
+    }
+  });
+
+  const entityForm = area.querySelector("#entity-form");
+  if(entityForm) entityForm.addEventListener("submit", async (e)=>{ e.preventDefault(); await handleEntitySubmit(role, new FormData(entityForm)); });
+
+  const bulkForm = area.querySelector("#bulk-form");
+  if(bulkForm) bulkForm.addEventListener("submit", async (e)=>{ e.preventDefault(); await handleBulkSubmit(role, new FormData(bulkForm)); });
+
+  const schoolNameForm = area.querySelector("#school-name-form");
+  if(schoolNameForm) schoolNameForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    SETTINGS.schoolName = new FormData(schoolNameForm).get("schoolName").trim() || SETTINGS.schoolName;
+    await saveSettings(); await renderMain();
+  });
+  area.querySelectorAll(".list-add-form").forEach(f=>{
+    f.addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const val = new FormData(f).get("item").trim();
+      const key = f.dataset.key;
+      if(val && !SETTINGS[key].includes(val)) SETTINGS[key].push(val);
+      await saveSettings(); await renderMain();
+    });
+  });
+
+  const pwForm = area.querySelector("#pw-form");
+  if(pwForm) pwForm.addEventListener("submit", async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(pwForm);
+    if(fd.get("current") !== me.password){ ui.err = "Current password is incorrect."; ui.ok=null; await renderMain(); return; }
+    me.password = fd.get("next");
+    await saveShard(session.role);
+    ui.err=null; ui.ok="Password updated."; await renderMain();
+  });
+}
+
+function refreshBody(role){
+  const body = document.getElementById("register-body");
+  if(body) body.innerHTML = registerBodyHTML(role);
+  const countEl = document.querySelector(".main-head .count");
+  if(countEl){ const s = STATS[role]; countEl.textContent = `${s.total} on record · ${s.active} active`; }
+}
+
+async function handleEntitySubmit(role, fd){
+  const data = {}; for(const [k,v] of fd.entries()) data[k] = typeof v==="string" ? v.trim() : v;
+
+  if(ui.editUid){
+    const u = SHARDS[role][ui.editUid];
+    Object.assign(u, sanitizeFields(role, data));
+    await saveShard(role);
+    ui.showForm=false; ui.editUid=null; ui.banner=null;
+    await renderMain(); return;
+  }
+
+  if(role === "student" && data.parentUid === "__new__"){
+    if(data.newParentName){
+      const newParent = makeUser("parent", {name:data.newParentName, phone:data.newParentPhone||"", email:data.newParentEmail||""});
+      await ensureShard("parent");
+      SHARDS.parent[newParent.uid] = newParent;
+      recomputeStat("parent"); await Promise.all([saveShard("parent"), saveStats()]);
+      data.parentUid = newParent.uid;
+    } else data.parentUid = "";
+  }
+
+  const fields = sanitizeFields(role, data);
+  const newUser = makeUser(role, fields);
+  SHARDS[role][newUser.uid] = newUser;
+  recomputeStat(role);
+  await Promise.all([saveShard(role), saveStats(), saveUsernameIndex(), saveSettings()]);
+  ui.showForm=false;
+  ui.banner = {name:newUser.name, role:newUser.role, id:newUser.id, username:newUser.username, password:newUser.password};
+  await renderMain();
+}
+
+async function handleBulkSubmit(role, fd){
+  const raw = fd.get("rows") || "";
+  const lines = raw.split("\n").map(l=>l.trim()).filter(Boolean);
+  const created = [];
+  lines.forEach(line=>{
+    const parts = line.split(",").map(p=>p.trim());
+    let fields = {};
+    if(role==="teacher") fields = {name:parts[0], phone:parts[1]||"", subject:parts[2]||"", classes:(parts[3]||"").replace(/;/g,","), email:parts[4]||""};
+    else if(role==="worker") fields = {name:parts[0], phone:parts[1]||"", position:parts[2]||"", department:parts[3]||"", email:parts[4]||""};
+    else if(role==="student") fields = {name:parts[0], rollNo:parts[1]||"", className:parts[2]||"", dob:parts[3]||"", address:parts[4]||"", parentUid:""};
+    else if(role==="parent") fields = {name:parts[0], phone:parts[1]||"", email:parts[2]||"", address:parts[3]||""};
+    else if(role==="admin") fields = {name:parts[0], phone:parts[1]||"", email:parts[2]||""};
+    if(!fields.name) return;
+    const user = makeUser(role, fields);
+    SHARDS[role][user.uid] = user;
+    created.push(user);
+  });
+  recomputeStat(role);
+  await Promise.all([saveShard(role), saveStats(), saveUsernameIndex(), saveSettings()]);
+  ui.showBulk = false;
+  ui.bulkResult = created.map(u=>({name:u.name, id:u.id, username:u.username, password:u.password}));
+  await renderMain();
+}
+
+function sanitizeFields(role, data){
+  const base = {name:data.name, phone:data.phone||"", email:data.email||""};
+  if(role==="teacher") return Object.assign(base, {subject:data.subject||"", classes:data.classes||""});
+  if(role==="worker") return Object.assign(base, {position:data.position||"", department:data.department||""});
+  if(role==="student") return Object.assign(base, {rollNo:data.rollNo||"", className:data.className||"", dob:data.dob||"", address:data.address||"", parentUid:data.parentUid||""});
+  if(role==="parent") return Object.assign(base, {address:data.address||""});
+  return base;
+}
+
+/* ================= BOOT ================= */
+(async function boot(){
+  SETTINGS = await kget("settings");
+  if(SETTINGS){
+    STATS = (await kget("stats")) || {};
+    USERNAME_INDEX = (await kget("username_index")) || {};
+  }
+  render();
+})();
+})();
+</script>
+</body>
+</html>
